@@ -5,7 +5,8 @@
 '''
 try to solve the board as much as possible through basic techniques
 once there are no improvements,
-switch to advanced mode
+switch to advanced mode 
+1.
 '''
 class SudokuSolver(object):
 
