@@ -19,6 +19,47 @@ class SudokuSolver(object):
         self.solve()
         self.sudoku_board.displayBoard()
         self.displayQuadrants()
+        print 'Solved ? : ' + str(self.solved())
+
+    def solved(self):
+        # check quadrants
+        for k in range(9):
+            region = self.quadrants[k]["region"]
+            requirements = [1, 2, 3, 4, 5, 6, 7 , 8 , 9]
+
+            for i in range(region["iStart"], region["iEnd"] + 1):
+                for j in range(region["jStart"], region["jEnd"] + 1):
+                    value = self.sudoku_board.board[i][j]
+                    requirements.remove(value)
+            
+            if len(requirements) != 0:
+                return False
+
+
+        # check rows
+        for i in range(9):
+            requirements = [1, 2, 3, 4, 5, 6, 7 , 8 , 9]
+            for j in range(9):
+                value = self.sudoku_board.board[i][j]
+                requirements.remove(value)
+            
+            if len(requirements) != 0:
+                return False
+
+        # check cols 
+        for j in range(9):
+            requirements = [1, 2, 3, 4, 5, 6, 7 , 8 , 9]
+            
+            for i in range(9):
+                value = self.sudoku_board.board[i][j]
+                requirements.remove(value)
+            
+            if len(requirements) != 0:
+                return False
+
+        return True
+
+
 
     def solve(self):
         # try to solve the puzzle by iteratively trying to solve the quadrants, rows and columns
@@ -274,18 +315,18 @@ class SudokuSolver(object):
 class Board(object):
     def __init__(self):
 
-        self.board = [
-            ['','','', '','',1, '','',7],#0
-            [1,'','', '',5, 6, 2,'',4],#1
-            [5,'',3, '','',8, 1,'',9],#2
-            [9,1,'', 8,3,'', '','',6],#3
-            ['','','',  1,7,'', '','',''],#4
-            [8,'',4,  6,9,5, '',2,1],#5
-            [6,8,'', 5,1,3, 4,'', 2],#6
-            ['',5,1, '',6,'', '','',''],#7
-            ['','','', '',8,'', 6,1,5],#8
+        # self.board = [
+        #     ['','','', '','',1, '','',7],#0
+        #     [1,'','', '',5, 6, 2,'',4],#1
+        #     [5,'',3, '','',8, 1,'',9],#2
+        #     [9,1,'', 8,3,'', '','',6],#3
+        #     ['','','',  1,7,'', '','',''],#4
+        #     [8,'',4,  6,9,5, '',2,1],#5
+        #     [6,8,'', 5,1,3, 4,'', 2],#6
+        #     ['',5,1, '',6,'', '','',''],#7
+        #     ['','','', '',8,'', 6,1,5],#8
 
-        ]
+        # ]
         # self.board = [
         #     # 0   1    2      3     4    5     6     7    8
         #     [ '', '', '',   '',  '', '',    '', '',''], # 0
@@ -301,22 +342,23 @@ class Board(object):
         #     [ '',  '',  8,    4, 7,  9,   2,  '', 6 ]  # 8
         # ]  
 
-        # self.board = [
-        #     # 0   1    2      3     4    5     6     7    8
-        #     [ '',  6,  9,    '',  '',  '',    8,  '',   7 ], # 0
-        #     [ 4,  '',   '',     '',  1,  '',     5,  '',  '' ], # 1
-        #     [ 5,  2,  7,      6,  '',   '',     '',   3,   1 ], # 2
+        self.board = [
+            # 0   1    2      3     4    5     6     7    8
+            [ '',  6,  9,    '',  '',  '',    8,  '',   7 ], # 0
+            [ 4,  '',   '',     '',  1,  '',     5,  '',  '' ], # 1
+            [ 5,  2,  7,      6,  '',   '',     '',   3,   1 ], # 2
             
-        #     [ 3,   '',  5,    2,  '',  4,     '',  6 , '' ], # 3
-        #     [ '',  7,   '',   '' , '' ,  '',     '',  '',  4 ], # 4
-        #     [ '',  '',  2,     1,  5,  '',       '', '',   '' ], # 5
+            [ 3,   '',  5,    2,  '',  4,     '',  6 , '' ], # 3
+            [ '',  7,   '',   '' , '' ,  '',     '',  '',  4 ], # 4
+            [ '',  '',  2,     1,  5,  '',       '', '',   '' ], # 5
             
-        #     [ 2,   '',   6,     8,   '',   '',     4,  9,  '' ], # 6
-        #     [ 9,  3,   '',    '',  '' , '',     7, 8,  2 ], # 7
-        #     [ '',  '',  8,    '',  '',  '',        '',   1,  '' ]  # 8
-        # ]  
+            [ 2,   '',   6,     8,   '',   '',     4,  9,  '' ], # 6
+            [ 9,  3,   '',    '',  '' , '',     7, 8,  2 ], # 7
+            [ '',  '',  8,    '',  '',  '',        '',   1,  '' ]  # 8
+        ]  
 
-    
+
+
 
     def displayBoard(self):
         print "\n      0    1    2       3    4    5       6    7     8"

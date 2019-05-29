@@ -6,7 +6,7 @@
 try to solve the board as much as possible through basic techniques
 once there are no improvements,
 switch to advanced mode 
-1.
+First find 
 '''
 class SudokuSolver(object):
 
@@ -18,6 +18,7 @@ class SudokuSolver(object):
         self.quadrants = {}
         self.rows = {}
         self.columns = {}
+        self.in_stage_2 = False
         self.generate_quadrant_metadata()
         self.generate_row_metadata()
         self.generate_column_metadata()
@@ -25,6 +26,46 @@ class SudokuSolver(object):
         print self.solve()
         self.sudoku_board.displayBoard()
         self.displayQuadrants()
+        print 'Solved ' + str(self.solved())
+        
+    def solved(self):
+        # check quadrants
+        for k in range(9):
+            region = self.quadrants[k]["region"]
+            requirements = [1, 2, 3, 4, 5, 6, 7 , 8 , 9]
+
+            for i in range(region["iStart"], region["iEnd"] + 1):
+                for j in range(region["jStart"], region["jEnd"] + 1):
+                    value = self.sudoku_board.board[i][j]
+                    requirements.remove(value)
+            
+            if len(requirements) != 0:
+                return False
+
+
+        # check rows
+        for i in range(9):
+            requirements = [1, 2, 3, 4, 5, 6, 7 , 8 , 9]
+            for j in range(9):
+                value = self.sudoku_board.board[i][j]
+                requirements.remove(value)
+            
+            if len(requirements) != 0:
+                return False
+
+        # check cols 
+        for j in range(9):
+            requirements = [1, 2, 3, 4, 5, 6, 7 , 8 , 9]
+            
+            for i in range(9):
+                value = self.sudoku_board.board[i][j]
+                requirements.remove(value)
+            
+            if len(requirements) != 0:
+                return False
+
+        return True
+
 
     def solve(self):
         # try to solve the puzzle by iteratively trying to solve the quadrants, rows and columns
@@ -32,13 +73,23 @@ class SudokuSolver(object):
         # self.solve_quadrants()
         # return
         iterations = 0
-        while self.solved() is False and iterations < 10:
+        blank_count = 0
+        while self.solved() is False and blank_count < 2:
             iterations += 1
             print '\nIteration ' + str(iterations)
             # attempt solving all quadrants 
             quadrant_improvements = self.solve_quadrants()
             row_improvements = self.solve_rows()
             column_improvements = self.solve_columns()
+
+            print 'Quadrant improvements ' + str(quadrant_improvements)
+            print 'Row improvements ' + str(row_improvements)
+            print 'Column improvements ' + str(column_improvements)
+
+            if quadrant_improvements + row_improvements + column_improvements == 0:
+                self.in_stage_2 = True
+                blank_count = blank_count + 1
+
             # attempt solving all rows
             # attempt solving all columns
 
@@ -71,6 +122,9 @@ class SudokuSolver(object):
                             acceptable_matches.append([i, j])
                     
                 # print 'Acceptable matches ' + str(acceptable_matches)
+                if len(acceptable_matches) == 0:
+                    print '\nFAILURE STATE REACHEDD for pending no ' + str(p) + ' in quadrant ' + str(k)
+
                 if len(acceptable_matches) == 1:
                     x = acceptable_matches[0][0]
                     y = acceptable_matches[0][1]
@@ -79,6 +133,12 @@ class SudokuSolver(object):
                     quadrant_improvements += 1
                     # print 'Adding ' + str(pending_number) + ' at ' + str(x) + ', ' + str(y)
                 
+                if self.in_stage_2 is True and len(acceptable_matches) == 2:
+                    print '\nPending number ' + str(pending_number) + ' has 2 acceptable matches :'
+                    print acceptable_matches
+
+
+
                 p += 1
         
         return quadrant_improvements
@@ -99,14 +159,24 @@ class SudokuSolver(object):
                             # print 'Found one'
                             acceptable_matches.append([i, j])
 
+                if len(acceptable_matches) == 0:
+                    print '\nFAILURE STATE REACHEDD for pending no ' + str(p) + ' in row ' + str(i)
+            
+
                 if len(acceptable_matches) == 1:
                         print 'Found in row' 
                         x = acceptable_matches[0][0]
                         y = acceptable_matches[0][1]
                         self.sudoku_board.board[x][y] = pending_number
                         self.remove_pending_number(x, y, pending_number)
-                        row_improvements += 1                
+                        row_improvements += 1    
+
+                if self.in_stage_2 is True and len(acceptable_matches) == 2:
+                    print '\nPending number ' + str(pending_number) + ' has 2 acceptable matches in row of ' + str(i)
+                    print acceptable_matches
+                
                 p += 1
+
         return row_improvements
 
 
@@ -127,6 +197,9 @@ class SudokuSolver(object):
                             # print 'Found one'
                             acceptable_matches.append([i, j])
 
+                if len(acceptable_matches) == 0:
+                    print '\nFAILURE STATE REACHEDD for pending no ' + str(p) + ' in column ' + str(j)
+
                 if len(acceptable_matches) == 1:
                         print 'Found in Column' 
                         x = acceptable_matches[0][0]
@@ -134,6 +207,11 @@ class SudokuSolver(object):
                         self.sudoku_board.board[x][y] = pending_number
                         self.remove_pending_number(x, y, pending_number)
                         column_improvements += 1
+
+                if self.in_stage_2 is True and len(acceptable_matches) == 2:
+                    print '\nPending number ' + str(pending_number) + ' has 2 acceptable matches in col of ' + str(j)
+                    print acceptable_matches
+                
                 
                 p += 1
         return column_improvements
@@ -219,6 +297,8 @@ class SudokuSolver(object):
                 for j in range(jStart, jEnd + 1):
                     value = self.sudoku_board.board[i][j]
                     if value != '':
+                        if value not in requirements:
+                            print 'Value missing ' + str(value)
                         requirements.remove(value)
 
             quadrants[k] = {
@@ -281,19 +361,90 @@ class SudokuSolver(object):
 
 class Board(object):
     def __init__(self):
+        # original hard 
+        # self.board = [
+        #     [7,'','',  '','','', 1,'',''],#0
+        #     ['',1,'',  '','',2, '','',9],#1
+        #     ['','','',  5,7,'', '',2,''],#2
+        #     [6,3,8,    '',4,'', '',9,''],#3
+        #     ['','','',  1,2,'', '','',''],#4
+        #     ['','','',  '','',9, '',8,''],#5
+        #     ['',2,4,   '','','', 5,'', 8],#6
+        #     [5,'',3,   '','','', '','',''],#7
+        #     ['','','', '','','', '',6,''],#8
+        # ]
 
+        # board at reaching first confusion state (L0)
+        # self.board = [
+        #     [7,'',2,  '','','', 1,'',''],#0
+        #     ['',1,'',  '','',2, '','',9],#1
+        #     ['','','',  5,7,1, '',2,''],#2
+        #     [6,3,8,     7,4,5,  2,9,1],#3
+        #     ['','','',  1,2,8, '','',''],#4
+        #     [2,'',1,  '','',9, '',8,''],#5
+        #     [9,2,4,   '','','', 5,'', 8],#6
+        #     [5,6,3,   '','','', '','',''],#7
+        #     [1,8,7,   '',5,'', '',6,''],#8
+        # ]
+
+        # board at reaching first confusion state (L0)
+        # self.board = [
+        #     [7,'',2,  '','','', 1,'',''],#0
+        #     ['',1,'',  '','',2, '','',9],#1
+        #     ['','','',  5,7,1, '',2,''],#2
+        #     [6,3,8,     7,4,5,  2,9,1],#3
+        #     ['','','',  1,2,8, '','',''],#4
+        #     [2,'',1,  '','',9, '',8,''],#5
+        #     [9,2,4,   '','','', 5,'', 8],#6
+        #     [5,6,3,   '','','', '','',''],#7
+        #     [1,8,7,   '',5,'', '',6,''],#8
+        # ]
+        
+
+        #board after assignments due to failures helping determine so
+        # self.board = [
+        #     [7,'',2,   '','','', 1,'',''],#0
+        #     [8,1,'',  '','',2, 7,'',9],#1
+        #     [3,4,'',  5,7,1, '',2,''],#2
+        #     [6,3,8,     7,4,5,  2,9,1],#3
+        #     ['','','',  1,2,8, '','',''],#4
+        #     [2,'',1,  '','',9, '',8,''],#5
+        #     [9,2,4,   '','','', 5,'', 8],#6
+        #     [5,6,3,   '','','', '','',''],#7
+        #     [1,8,7,   '',5,'', '',6,''],#8
+        # ]
+        # ======================
+
+        #Extreme problem , starting position
+
+        # self.board = [
+        #     ['','',5,   '','','', 6,'',2],#0
+        #     ['',3,'',  '',4,'', 5,'',''],#1
+        #     ['','','',  '',3,'', 9,'',''],#2
+        #     [6,'','',     '','','',  '',9,''],#3
+        #     ['','','',  '','','', '','',''],#4
+        #     ['',4,'',  2,'',3, '','',7],#5
+        #     [5,2,'',   3,'','', '',8, ''],#6
+        #     [9,7,'',   '','',8, '','',4],#7
+        #     ['',8,6,   '','','', '','',''],#8
+        # ]
+
+
+        # Extreme prob, 1st confusion state
         self.board = [
-            ['','','', '','',1, '','',7],#0
-            [1,'','', '',5, 6, 2,'',4],#1
-            [5,'',3, '','',8, 1,'',9],#2
-            [9,1,'', 8,3,'', '','',6],#3
-            ['','','',  1,7,'', '','',''],#4
-            [8,'',4,  6,9,5, '',2,1],#5
-            [6,8,'', 5,1,3, 4,'', 2],#6
-            ['',5,1, '',6,'', '','',''],#7
-            ['','','', '',8,'', 6,1,5],#8
-
+            [4,9,5,   '','','',  6,3,2],#0
+            [2,3,'',  '',4,'',   5,7,''],#1
+            ['',6,'',  '',3,2,   9,4,''],#2
+            [6,'','',  '','','', '',9,''],#3
+            ['','','',  '','','', '','',5],#4
+            ['',4,9,   2,'',3,   '','',7],#5
+            [5,2,4,    3,'','',  '',8, 6],#6
+            [9,7,'',   '','',8,  '','',4],#7
+            ['',8,6,   '','','', '','',9],#8
         ]
+
+        #===================
+
         # self.board = [
         #     # 0   1    2      3     4    5     6     7    8
         #     [ '', '', '',   '',  '', '',    '', '',''], # 0
